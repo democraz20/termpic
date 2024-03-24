@@ -10,6 +10,13 @@ static TEST_FILE_PATH: &str = "../../nufc_wallpaper.png";
 static  TEST_FILE_PATH: &str = r#"E:\demc\funni\irog.png"#;
 // static TEST_FILE_PATH: &str = "..\\unsorted\\maxresdefault.jpg";
 
+#[derive(Debug)]
+enum ImageLayout {
+    Vertical,
+    Horizontal,
+    Square
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>>{
     let args: Vec<String> = env::args().collect();
     dbg!(args);
@@ -24,6 +31,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>>{
     let ratio = simplify_ratio(dimensions.0, dimensions.1);
     //let ratio = simplify_ratio(800, 200);
     println!("ratio     : {:?}", ratio);
+    let layout = get_layout(ratio);
+    
+    println!("layout    : {:?}", layout);
     //let (rows, columns) = 
     let (rows, cols) = match term_size::dimensions() {
         Some(r) => { (r.0, r.1) },
@@ -39,7 +49,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>>{
     //let (dc_rows, dc_cols) = (rows, cols/2);
     let (dc_rows, dc_cols): (u32, u32) = (rows.try_into()?, cols.try_into()?);
 
-    let resize = image::imageops::resize(&img, dc_rows, dc_cols, image::imageops::FilterType::Nearest);
+    let resize = image::imageops::resize(&img, dc_rows, dc_cols, image::imageops::FilterType::Gaussian);
     //let resize = image::DynamicImage::resize_exact(&img, ratio.0, (ratio.1)*2, image::imageops::FilterType::Lanczos3);
     //let resize = image::DynamicImage::resize_exact(&img, dc_rows as u32, dc_cols as u32, image::imageops::FilterType::Lanczos3);
     //resize.save("resized.jpg")?;
@@ -75,13 +85,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>>{
         println!();
     }
 
-    // for i in rgb_vec {
-    //     // print!("{}", " ".on_truecolor(i.0, i.1, i.2));
-    //     print!("{}", " ".on_truecolor(i.0, i.1, i.2));
-    // }
-
-    // println!("term size : {}x{}", rows, cols);
-    // println!("resized   : {}x{}", dc_rows, dc_cols);
+    println!("term size : {}x{}", rows, cols);
+    println!("resized   : {}x{}", dc_rows, dc_cols);
     Ok(())
 }
 
@@ -95,4 +100,21 @@ fn simplify_ratio(width: u32, height: u32) -> (u32, u32) {
     }
 
     (width / a, height / a)
+}
+
+fn minimize_ratio(width: u32, height: u32, prio_width: bool) -> (u32, u32) {
+   (0,0)
+    
+}
+
+fn get_layout(imageratio: (u32, u32)) -> Result<ImageLayout, Box<dyn std::error::Error>> {
+    if imageratio.0 == imageratio.1 {
+        return Ok(ImageLayout::Square)
+    } else if imageratio.0 > imageratio.1 {
+        return Ok(ImageLayout::Horizontal)
+    } else if imageratio.0 < imageratio.1 {
+        return Ok(ImageLayout::Vertical)
+    } else {
+        return Err(format!("Unable to get image layout from ratio : {:?}", imageratio));
+    }
 }
